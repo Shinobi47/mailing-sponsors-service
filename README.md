@@ -1,0 +1,1 @@
+# mailing-sponsors-service
