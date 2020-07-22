@@ -1,4 +1,4 @@
-package com.benayed.mailing.servers.serversservice;
+package com.benayed.mailing.sponsors.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

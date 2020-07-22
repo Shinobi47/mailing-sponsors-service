@@ -1,4 +1,4 @@
-package com.benayed.mailing.servers.serversservice;
+package com.benayed.mailing.sponsors.test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;

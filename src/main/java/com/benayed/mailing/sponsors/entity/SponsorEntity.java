@@ -34,7 +34,7 @@ public class SponsorEntity {
 	private LocalDateTime lastOffersRefresh;
 	
 	@Enumerated(EnumType.STRING)
-	@Column(name = "SPR_PLATEFORM")
+	@Column(name = "SPR_PLATFORM")
 	private Platform platform;
 	
 	@Column(name = "SPR_API_URL")
