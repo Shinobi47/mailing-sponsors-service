@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import com.benayed.mailing.sponsors.constant.Constants;
 import com.benayed.mailing.sponsors.dto.OfferDto;
 import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
 import com.benayed.mailing.sponsors.repository.HiPathPlatformRepository;
@@ -112,7 +111,6 @@ class HiPathRepositoryTests {
 		String suppressUrl = "url1";
 		String suppressUrlSuffix  = ",,";
 		String suppressMsg = "msg1";
-		String defaultHiPathSuppressionFileType = Constants.ZIP_FILE_TYPE;
 
 		String response = buildXmlSuppressionData(suppressMsg, suppressUrl);
 		when(restTemplate.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
@@ -125,7 +123,6 @@ class HiPathRepositoryTests {
 		assertThat(suppressionData).isPresent();
 		assertThat(suppressionData.get().getSuppressionDataUrl()).isEqualTo(suppressUrl + suppressUrlSuffix);
 		assertThat(suppressionData.get().getSuppressionErrorMessage()).isEqualTo(suppressMsg);
-		assertThat(suppressionData.get().getSuppressionDataType()).isEqualTo(defaultHiPathSuppressionFileType);
 	}
 	
 	@Test

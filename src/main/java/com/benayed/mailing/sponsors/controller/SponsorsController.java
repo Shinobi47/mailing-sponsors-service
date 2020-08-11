@@ -1,7 +1,5 @@
 package com.benayed.mailing.sponsors.controller;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
@@ -46,7 +44,7 @@ public class SponsorsController {
 			      schema = @Schema(implementation = SponsorDto.class)) }),
 			  @ApiResponse(responseCode = "404", description = "Sponsor not found", 
 			    content = @Content) })
-	@GetMapping(path = "/sponsor/{name}", produces = "application/json")
+	@GetMapping(path = "/sponsor/{name}/offers", produces = "application/json")
 	public ResponseEntity<?> fetchSponsorData(@PathVariable String name, @RequestParam(name = "refresh-offers", required = false) Boolean refreshOffers){
 
 		if(Boolean.TRUE.equals(refreshOffers)) {
@@ -54,10 +52,12 @@ public class SponsorsController {
 		}
 		
 		SponsorDto sponsor = offerService.fetchSponsorOffers(name);
-		return new ResponseEntity<SponsorDto>(sponsor, Objects.nonNull(sponsor) ? HttpStatus.OK : HttpStatus.NOT_FOUND);
+		return Objects.nonNull(sponsor) 
+				? new ResponseEntity<SponsorDto>(sponsor, HttpStatus.OK)
+						: new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 	
-	@Operation(summary = "Gets suppression data for a specific offer", description = "For this endpoint, only two fields are possible : suppression_data_path and suppression_data_type")
+	@Operation(summary = "Gets suppression data for a specific offer", description = "For this endpoint, only one field is supported atm : suppression-location")
 	@ApiResponses(value = { 
 			  @ApiResponse(responseCode = "200", description = "Suppression data found", 
 			    content = { @Content(mediaType = "application/json", 
@@ -65,15 +65,14 @@ public class SponsorsController {
 			  @ApiResponse(responseCode = "400", description = "Invalid request parameters", 
 			    content = @Content) })
 	@GetMapping(path = "/offers/{id}", produces = "application/json")
-	public ResponseEntity<?> fetch(@PathVariable Long id, @RequestParam List<String> fields){
+	public ResponseEntity<?> fetch(@PathVariable Long id, @RequestParam String fields){
 		
-		if(fields.containsAll(Arrays.asList("suppression_data_path","suppression_data_type"))) {
+		if("suppression-location".equalsIgnoreCase(fields)) {
 			SuppressionDataDto suppressionData = offerService.fetchOfferSuppressionData(id);
-			return new ResponseEntity<SuppressionDataDto>(suppressionData, HttpStatus.OK);
+			return new ResponseEntity<String>(suppressionData.getSuppressionDataUrl(), HttpStatus.OK);
 		}
-		else {
-			return new ResponseEntity<String>("Unsupported requested fieds", HttpStatus.BAD_REQUEST);
-		}
+		
+		return new ResponseEntity<String>("Unsupported requested fieds", HttpStatus.BAD_REQUEST);
 	}
 
 }

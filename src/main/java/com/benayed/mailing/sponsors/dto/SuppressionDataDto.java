@@ -23,6 +23,5 @@ public class SuppressionDataDto {
 	@JsonIgnore
 	@XmlElement(name = "supperrmsg")
 	private String suppressionErrorMessage;
-	
-	private String suppressionDataType;
+
 }

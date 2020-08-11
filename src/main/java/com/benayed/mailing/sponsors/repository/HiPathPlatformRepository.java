@@ -1,7 +1,5 @@
 package com.benayed.mailing.sponsors.repository;
 
-import static com.benayed.mailing.sponsors.constant.Constants.ZIP_FILE_TYPE;
-
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
@@ -136,7 +134,6 @@ public class HiPathPlatformRepository {
 
 	private SuppressionDataDto toDtoWithDataType(SuppressionDataDto suppData) {
 		return SuppressionDataDto.builder()
-				.suppressionDataType(ZIP_FILE_TYPE)
 				.suppressionDataUrl(suppData.getSuppressionDataUrl())
 				.suppressionErrorMessage(suppData.getSuppressionErrorMessage())
 				.build();
