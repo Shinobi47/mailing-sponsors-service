@@ -5,13 +5,16 @@ import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.benayed.mailing.sponsors.dto.ActivateOfferDto;
 import com.benayed.mailing.sponsors.dto.SponsorDto;
-import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
+import com.benayed.mailing.sponsors.service.OfferActivationService;
 import com.benayed.mailing.sponsors.service.OfferService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +30,7 @@ import lombok.AllArgsConstructor;
 public class SponsorsController {
 	
 	private OfferService offerService;
+	private OfferActivationService offerActivationService;
 	
 	@Operation(summary = "health check opertation")
 	@ApiResponses(value = { 
@@ -55,24 +59,26 @@ public class SponsorsController {
 		return Objects.nonNull(sponsor) 
 				? new ResponseEntity<SponsorDto>(sponsor, HttpStatus.OK)
 						: new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	}
+	}	
 	
-	@Operation(summary = "Gets suppression data for a specific offer", description = "For this endpoint, only one field is supported atm : suppression-location")
+	@Operation(summary = "activate or deactivate an offer", description = "The patch supported ATM is to activate or deactivate an offer by providing a json input containing the fields 'offerId' and 'isActive'")
 	@ApiResponses(value = { 
-			  @ApiResponse(responseCode = "200", description = "Suppression data found", 
-			    content = { @Content(mediaType = "application/json", 
-			      schema = @Schema(implementation = SponsorDto.class)) }),
+			  @ApiResponse(responseCode = "200", description = "Offer patched successfully"),
 			  @ApiResponse(responseCode = "400", description = "Invalid request parameters", 
 			    content = @Content) })
-	@GetMapping(path = "/offers/{id}", produces = "application/json")
-	public ResponseEntity<?> fetch(@PathVariable Long id, @RequestParam String fields){
+	@PatchMapping(path = "/offers/{id}")
+	public void patch(@RequestBody ActivateOfferDto offerPatch) {
 		
-		if("suppression-location".equalsIgnoreCase(fields)) {
-			SuppressionDataDto suppressionData = offerService.fetchOfferSuppressionData(id);
-			return new ResponseEntity<String>(suppressionData.getSuppressionDataUrl(), HttpStatus.OK);
+		if(Boolean.TRUE.equals(offerPatch.getIsActive())) {
+			offerActivationService.activateOffer(offerPatch.getOfferId());
 		}
 		
-		return new ResponseEntity<String>("Unsupported requested fieds", HttpStatus.BAD_REQUEST);
+		else if(Boolean.FALSE.equals(offerPatch.getIsActive())) {
+			offerActivationService.deactivateOffer(offerPatch.getOfferId());
+		}
+	
+		throw new IllegalArgumentException("Unsupported patch operation");
+	
 	}
 
 }

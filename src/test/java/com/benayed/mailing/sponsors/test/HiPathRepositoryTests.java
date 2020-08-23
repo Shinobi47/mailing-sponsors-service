@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.benayed.mailing.sponsors.dto.OfferDto;
-import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
+import com.benayed.mailing.sponsors.dto.SuppressionInfoDto;
 import com.benayed.mailing.sponsors.repository.HiPathPlatformRepository;
 
 
@@ -117,7 +117,7 @@ class HiPathRepositoryTests {
 
 		
 		//Act
-		Optional<SuppressionDataDto> suppressionData = hiPathPlatformRepository.fetchOfferSuppressData("id1", "someKey", "someUrl");
+		Optional<SuppressionInfoDto> suppressionData = hiPathPlatformRepository.fetchOfferSuppressionInfo("id1", "someKey", "someUrl");
 		
 		//Assert
 		assertThat(suppressionData).isPresent();
@@ -134,7 +134,7 @@ class HiPathRepositoryTests {
 
 		//Act
 		Assertions.assertThrows(IllegalArgumentException.class, () -> 
-		hiPathPlatformRepository.fetchOfferSuppressData(campaignId, apiKey, apiUrl));
+		hiPathPlatformRepository.fetchOfferSuppressionInfo(campaignId, apiKey, apiUrl));
 		
 		//Assert
 		//=> exception thrown
@@ -150,7 +150,7 @@ class HiPathRepositoryTests {
 
 		//Act
 		Assertions.assertThrows(IllegalArgumentException.class, () -> 
-		hiPathPlatformRepository.fetchOfferSuppressData(campaignId, apiKey, apiUrl));
+		hiPathPlatformRepository.fetchOfferSuppressionInfo(campaignId, apiKey, apiUrl));
 		
 		//Assert
 		//=> exception thrown
@@ -166,7 +166,7 @@ class HiPathRepositoryTests {
 
 		//Act
 		Assertions.assertThrows(IllegalArgumentException.class, () -> 
-		hiPathPlatformRepository.fetchOfferSuppressData(campaignId, apiKey, apiUrl));
+		hiPathPlatformRepository.fetchOfferSuppressionInfo(campaignId, apiKey, apiUrl));
 		
 		//Assert
 		//=> exception thrown

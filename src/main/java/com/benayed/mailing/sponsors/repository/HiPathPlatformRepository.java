@@ -22,7 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.benayed.mailing.sponsors.dto.OfferDatasetDto;
 import com.benayed.mailing.sponsors.dto.OfferDto;
-import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
+import com.benayed.mailing.sponsors.dto.SuppressionInfoDto;
 import com.benayed.mailing.sponsors.dto.SuppressionDatasetDto;
 import com.benayed.mailing.sponsors.exception.TechnicalException;
 
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HiPathPlatformRepository {
 
-	private RestTemplate restTemplate;
+	private RestTemplate hiPathRestTemplate;
 	
 	private final String API_GET_CAMPAIGN_FUNC_NAME = "getcampaigns";
 	private final String API_GET_SUPPRESSION_FUNC_NAME = "getsuppression";
@@ -40,8 +40,8 @@ public class HiPathPlatformRepository {
 	private final String API_KEY_FIELD_NAME = "apikey";
 	private final String API_FUNC_FIELD_NAME = "apifunc";
 	
-	public HiPathPlatformRepository(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
+	public HiPathPlatformRepository(RestTemplate hiPathRestTemplate) {
+		this.hiPathRestTemplate = hiPathRestTemplate;
 	}
 	
 	public List<OfferDto> fetchOffers(String apiKey, String apiUrl){
@@ -52,13 +52,13 @@ public class HiPathPlatformRepository {
 		HttpEntity<?> requestEntity = buildHiPathPOSTRequest(apiKey, API_GET_CAMPAIGN_FUNC_NAME);
 		
     	log.info("Calling Distant API...");
-		ResponseEntity<String> response = this.restTemplate.postForEntity(apiUrl, requestEntity, String.class);
+		ResponseEntity<String> response = this.hiPathRestTemplate.postForEntity(apiUrl, requestEntity, String.class);
 
 		return unmarshallResponse(response, this::unMarshallSponsorOffers);
 		
 	}
 	
-	public Optional<SuppressionDataDto> fetchOfferSuppressData(String campaignId, String apiKey, String apiUrl) {
+	public Optional<SuppressionInfoDto> fetchOfferSuppressionInfo(String campaignId, String apiKey, String apiUrl) {
 		
 		Assert.notNull(apiKey, "ApiKey cannot be null");
 		Assert.notNull(apiUrl, "ApiUrl cannot be null");
@@ -68,9 +68,9 @@ public class HiPathPlatformRepository {
 		HttpEntity<MultiValueMap<String, String>> requestEntity = buildHiPathPOSTRequest(apiKey, API_GET_SUPPRESSION_FUNC_NAME);
 		requestEntity.getBody().add(API_CAMPAIGNID_PARAM_NAME, campaignId);
 
-		ResponseEntity<String> response = this.restTemplate.postForEntity(apiUrl, requestEntity, String.class);
+		ResponseEntity<String> response = this.hiPathRestTemplate.postForEntity(apiUrl, requestEntity, String.class);
 	
-		return unmarshallResponse(response, this::unMarshallSponsorSuppressionData).map(this::toDtoWithDataType);
+		return unmarshallResponse(response, this::unMarshallSponsorSuppressionData).map(this::toDtoWithExtractedUrl);
 
 	}
 
@@ -95,13 +95,12 @@ public class HiPathPlatformRepository {
 		
 		return Optional.ofNullable(offerDatasetDto).map(OfferDatasetDto::getOffers).orElse(null);
 	}
-	private Optional<SuppressionDataDto> unMarshallSponsorSuppressionData(ResponseEntity<String> response) {
+	private Optional<SuppressionInfoDto> unMarshallSponsorSuppressionData(ResponseEntity<String> response) {
 		SuppressionDatasetDto suppressionDatasetDto = fromStringXmlToObject(SuppressionDatasetDto.class, response.getBody().toString());
 		return Optional.ofNullable(suppressionDatasetDto).map(SuppressionDatasetDto::getSuppressionData);
 	}
 	
 	private <T> T fromStringXmlToObject(Class<T> destinationType, String stringXml) {
-		System.out.println(stringXml);
 		T destinationObject = null;
 		try (StringReader stringReader = new StringReader(stringXml)){
 			JAXBContext jaxbContext = JAXBContext.newInstance(destinationType);
@@ -132,9 +131,12 @@ public class HiPathPlatformRepository {
 	}
 	
 
-	private SuppressionDataDto toDtoWithDataType(SuppressionDataDto suppData) {
-		return SuppressionDataDto.builder()
-				.suppressionDataUrl(suppData.getSuppressionDataUrl())
+	private SuppressionInfoDto toDtoWithExtractedUrl(SuppressionInfoDto suppData) {
+		// url comes like this form hipath : " url,unknown,unknown
+		String extractedSuppDataUrl = suppData.getSuppressionDataUrl() == null ? null :
+			suppData.getSuppressionDataUrl().split(",")[0];
+		return SuppressionInfoDto.builder()
+				.suppressionDataUrl(extractedSuppDataUrl)
 				.suppressionErrorMessage(suppData.getSuppressionErrorMessage())
 				.build();
 	}

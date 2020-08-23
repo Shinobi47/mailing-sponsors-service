@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.benayed.mailing.sponsors.dto.SponsorDto;
-import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
+import com.benayed.mailing.sponsors.dto.SuppressionInfoDto;
 import com.benayed.mailing.sponsors.entity.OfferEntity;
 import com.benayed.mailing.sponsors.entity.SponsorEntity;
 import com.benayed.mailing.sponsors.enums.Platform;
@@ -35,16 +35,17 @@ public class OfferService {
 	private DataMapper dataMapper;
 
 	
-	public SuppressionDataDto fetchOfferSuppressionData(Long offerId) {
+	public SuppressionInfoDto fetchOfferSuppressionData(Long offerId) {
 		OfferEntity offer = offerDBRepository.findById(offerId)
 				.orElseThrow(() -> new TechnicalException("No such offer with the given id"));
 		
 		SponsorEntity sponsor = Optional.ofNullable(offer.getSponsor())
 				.orElseThrow(() -> new TechnicalException("The registered offer doesn't have a sponsor !"));
 		
-		return hiPathPlatformRepository.fetchOfferSuppressData(offer.getCampaignid(), sponsor.getApiKey(), sponsor.getApiURL())
+		return hiPathPlatformRepository.fetchOfferSuppressionInfo(offer.getCampaignid(), sponsor.getApiKey(), sponsor.getApiURL())
 				.orElseThrow(() -> new ResourceNotFoundException("No Suppression data found for the given campaing id !"));
 	}
+	
 	public List<SponsorDto> getAllSponsorsData(){
     	log.info("Fetching all Sponsors");
     	
@@ -76,11 +77,10 @@ public class OfferService {
 				.orElseThrow(() -> new ResourceNotFoundException("No sponsor found with the given name"));
 	}
 	
-
 	private void refreshSponsorOffersInTheDBFromDistantApi(SponsorEntity sponsor) {
 		Long timespanInMinutes = 30L; // with HiPath api, we can perform only one call per 30 mins.
 		
-		if(lastRefreshWasNotInTheLastTimespan(timespanInMinutes, sponsor)) {
+		if(lastRefreshWasNotInTheLastTimespan(timespanInMinutes, sponsor.getLastOffersRefresh())) {
 			List<OfferEntity> freshOffers = hiPathPlatformRepository.fetchOffers(sponsor.getApiKey(), sponsor.getApiURL())
 					.stream()
 					.map(dataMapper::toEntity)
@@ -99,8 +99,8 @@ public class OfferService {
 		offerDBRepository.saveAll(freshOffers);
 	}
 
-	private boolean lastRefreshWasNotInTheLastTimespan(Long timespan, SponsorEntity sponsor) {
-		return sponsor.getLastOffersRefresh() == null || LocalDateTime.now().isAfter(sponsor.getLastOffersRefresh().plusMinutes(timespan));
+	private boolean lastRefreshWasNotInTheLastTimespan(Long timespan, LocalDateTime offersLastRefreshTime) {
+		return offersLastRefreshTime == null || LocalDateTime.now().isAfter(offersLastRefreshTime.plusMinutes(timespan));
 	}
 
 }

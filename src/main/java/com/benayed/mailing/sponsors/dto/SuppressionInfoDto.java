@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Data @AllArgsConstructor @NoArgsConstructor @Builder
 @XmlRootElement(name = "data")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class SuppressionDataDto {
+public class SuppressionInfoDto {
 
 	@XmlElement(name = "suppurl")
 	private String suppressionDataUrl;

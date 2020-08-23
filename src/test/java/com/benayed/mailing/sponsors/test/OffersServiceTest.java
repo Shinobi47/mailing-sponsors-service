@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.benayed.mailing.sponsors.dto.OfferDto;
 import com.benayed.mailing.sponsors.dto.SponsorDto;
-import com.benayed.mailing.sponsors.dto.SuppressionDataDto;
+import com.benayed.mailing.sponsors.dto.SuppressionInfoDto;
 import com.benayed.mailing.sponsors.entity.OfferEntity;
 import com.benayed.mailing.sponsors.entity.SponsorEntity;
 import com.benayed.mailing.sponsors.enums.Platform;
@@ -115,10 +115,10 @@ class OffersServiceTest {
 		//Arrange
 		Long someOfferId = 1L;
 		Optional<OfferEntity> someOfferData = Optional.of(OfferEntity.builder().sponsor(SponsorEntity.builder().build()).build());
-		Optional<SuppressionDataDto> emptySuppression = Optional.empty();
+		Optional<SuppressionInfoDto> emptySuppression = Optional.empty();
 		
 		when(offerDBRepository.findById(someOfferId)).thenReturn(someOfferData);
-		when(hiPathPlatformRepository.fetchOfferSuppressData(null, null,null)).thenReturn(emptySuppression);
+		when(hiPathPlatformRepository.fetchOfferSuppressionInfo(null, null,null)).thenReturn(emptySuppression);
 		//Act
 		assertThrows(ResourceNotFoundException.class, () -> 
 		offerService.fetchOfferSuppressionData(someOfferId));
@@ -136,12 +136,12 @@ class OffersServiceTest {
 		.sponsor(SponsorEntity.builder().apiKey("someApiKey").apiURL("someApiUrl").build()).build();
 		
 		Optional<OfferEntity> someOfferData = Optional.of(offerInTheDb);
-		Optional<SuppressionDataDto> existingSuppression = Optional.of(SuppressionDataDto.builder().build());
+		Optional<SuppressionInfoDto> existingSuppression = Optional.of(SuppressionInfoDto.builder().build());
 		
 		when(offerDBRepository.findById(someOfferId)).thenReturn(someOfferData);
-		when(hiPathPlatformRepository.fetchOfferSuppressData(offerInTheDb.getCampaignid(), offerInTheDb.getSponsor().getApiKey(), offerInTheDb.getSponsor().getApiURL())).thenReturn(existingSuppression);
+		when(hiPathPlatformRepository.fetchOfferSuppressionInfo(offerInTheDb.getCampaignid(), offerInTheDb.getSponsor().getApiKey(), offerInTheDb.getSponsor().getApiURL())).thenReturn(existingSuppression);
 		//Act
-		SuppressionDataDto suppressionData = offerService.fetchOfferSuppressionData(someOfferId);
+		SuppressionInfoDto suppressionData = offerService.fetchOfferSuppressionData(someOfferId);
 		
 		//Assert
 		Assertions.assertThat(suppressionData).isNotNull();

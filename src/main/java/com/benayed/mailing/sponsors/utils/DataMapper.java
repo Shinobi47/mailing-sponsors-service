@@ -47,7 +47,7 @@ public class DataMapper {
 
 	}
 
-	private Boolean StringToBoolean(String isActive) {
+	public Boolean StringToBoolean(String isActive) {
 		if(TRUE.equals(isActive)) {
 			return true;
 		}
@@ -74,7 +74,7 @@ public class DataMapper {
 				.isActive(booleanToString(dto.getIsActive())).build();
 	}
 
-	private String booleanToString(Boolean isActive) {
+	public String booleanToString(Boolean isActive) {
 		if(Boolean.TRUE.equals(isActive)) {
 			return TRUE;
 		}

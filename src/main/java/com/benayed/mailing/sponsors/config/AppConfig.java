@@ -15,9 +15,9 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class AppConfig {
-
-	@Bean
-	public RestTemplate restTemplate() {
+	
+	@Bean //bean qualifier is method name
+	public RestTemplate hiPathRestTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
 	
 		StringHttpMessageConverter stringResponseUnmarshallingConverter = new StringHttpMessageConverter();
@@ -32,6 +32,11 @@ public class AppConfig {
 				
 		restTemplate.setMessageConverters(messageConverters); 
 	    return restTemplate;
+	}
+	
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
 	}
 	
 }

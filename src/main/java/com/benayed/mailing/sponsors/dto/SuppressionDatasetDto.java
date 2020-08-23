@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class SuppressionDatasetDto {
 	
 	@XmlElement(name = "data")
-	private SuppressionDataDto suppressionData;
+	private SuppressionInfoDto suppressionData;
 
 }

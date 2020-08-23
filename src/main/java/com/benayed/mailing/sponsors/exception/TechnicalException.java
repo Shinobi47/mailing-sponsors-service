@@ -15,4 +15,7 @@ public class TechnicalException extends RuntimeException{
 		super(message);
 	}
 
+	public TechnicalException(Exception message) {
+		super(message);
+	}
 }
