@@ -48,9 +48,9 @@ public class OfferService {
 	
 	public List<SponsorDto> getAllSponsorsData(){
     	log.info("Fetching all Sponsors");
-    	
+    	boolean shouldMapOffers = true;
 		List<SponsorEntity>  sponsors = sponsorDBRepository.findAll();
-		return sponsors.stream().map(dataMapper::toDto).collect(Collectors.toList());
+		return sponsors.stream().map(sponsor -> dataMapper.toDto(sponsor, shouldMapOffers)).collect(Collectors.toList());
 	}
 	
 	public void refreshSponsorOffers(String sponsorName) throws TechnicalException {
@@ -70,10 +70,11 @@ public class OfferService {
 	
 	public SponsorDto fetchSponsorOffers(String sponsorName) {
     	log.info("Fetching a Sponsor and its Offers...");
-
+    	
+    	boolean shouldMapOffers = true;
 		return sponsorDBRepository
 				.findByName(sponsorName)
-				.map(dataMapper::toDto)
+				.map(sponsor -> dataMapper.toDto(sponsor, shouldMapOffers))
 				.orElseThrow(() -> new ResourceNotFoundException("No sponsor found with the given name"));
 	}
 	

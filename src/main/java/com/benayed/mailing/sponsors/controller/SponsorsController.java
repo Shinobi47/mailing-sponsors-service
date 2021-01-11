@@ -1,9 +1,11 @@
 package com.benayed.mailing.sponsors.controller;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +18,7 @@ import com.benayed.mailing.sponsors.dto.ActivateOfferDto;
 import com.benayed.mailing.sponsors.dto.SponsorDto;
 import com.benayed.mailing.sponsors.service.OfferActivationService;
 import com.benayed.mailing.sponsors.service.OfferService;
+import com.benayed.mailing.sponsors.service.SponsorService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,6 +34,7 @@ public class SponsorsController {
 	
 	private OfferService offerService;
 	private OfferActivationService offerActivationService;
+	private SponsorService sponsorService;
 	
 	@Operation(summary = "health check opertation")
 	@ApiResponses(value = { 
@@ -48,7 +52,7 @@ public class SponsorsController {
 			      schema = @Schema(implementation = SponsorDto.class)) }),
 			  @ApiResponse(responseCode = "404", description = "Sponsor not found", 
 			    content = @Content) })
-	@GetMapping(path = "/sponsor/{name}/offers", produces = "application/json")
+	@GetMapping(path = "/sponsors/{name}/offers", produces = "application/json")
 	public ResponseEntity<?> fetchSponsorData(@PathVariable String name, @RequestParam(name = "refresh-offers", required = false) Boolean refreshOffers){
 
 		if(Boolean.TRUE.equals(refreshOffers)) {
@@ -80,5 +84,25 @@ public class SponsorsController {
 		throw new IllegalArgumentException("Unsupported patch operation");
 	
 	}
+	
+	
+	@Operation(summary = "Get all available sponsors list")
+	@ApiResponses(value = { 
+			  @ApiResponse(responseCode = "200", description = "Found the sponsors", 
+			    content = { @Content(mediaType = "application/json", 
+			      schema = @Schema(implementation = SponsorDto.class)) }),
+			  @ApiResponse(responseCode = "404", description = "no sponsors found", 
+			    content = @Content) })
+	@GetMapping(path = "/sponsors/", produces = "application/json")
+	public ResponseEntity<?> fetchSponspors(){
+
+		List<SponsorDto> sponsors = sponsorService.fetchSponsors();
+		System.out.println(sponsors);
+		return CollectionUtils.isEmpty(sponsors)
+				? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+						: new ResponseEntity<List<SponsorDto>>(sponsors, HttpStatus.OK);
+	}
+	
+	
 
 }

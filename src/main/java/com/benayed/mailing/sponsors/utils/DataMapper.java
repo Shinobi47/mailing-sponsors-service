@@ -25,8 +25,15 @@ public class DataMapper {
 				.id(entity.getId())
 				.name(entity.getName())
 				.lastOffersRefresh(entity.getLastOffersRefresh())
-				.platform(entity.getPlatform())
-				.offers(mapOffers(entity)).build();
+				.platform(entity.getPlatform()).build();
+	}
+	
+	public SponsorDto toDto(SponsorEntity entity, boolean shouldMapOffers) {
+		SponsorDto dto = toDto(entity);
+		if(shouldMapOffers) {
+			dto.setOffers(mapOffers(entity));
+		}
+		return dto;
 	}
 
 	public OfferDto toDto(OfferEntity entity) {
