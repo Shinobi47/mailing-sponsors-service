@@ -97,12 +97,27 @@ public class SponsorsController {
 	public ResponseEntity<?> fetchSponspors(){
 
 		List<SponsorDto> sponsors = sponsorService.fetchSponsors();
-		System.out.println(sponsors);
 		return CollectionUtils.isEmpty(sponsors)
 				? new ResponseEntity<>(HttpStatus.NOT_FOUND)
 						: new ResponseEntity<List<SponsorDto>>(sponsors, HttpStatus.OK);
 	}
 	
+	
+	@Operation(summary = "Get all available sponsors list with their offers")
+	@ApiResponses(value = { 
+			  @ApiResponse(responseCode = "200", description = "Found the sponsors", 
+			    content = { @Content(mediaType = "application/json", 
+			      schema = @Schema(implementation = SponsorDto.class)) }),
+			  @ApiResponse(responseCode = "404", description = "no sponsors found", 
+			    content = @Content) })
+	@GetMapping(path = "/sponsors/offers", produces = "application/json")
+	public ResponseEntity<?> fetchSponsporsWithOffers(){
+
+		List<SponsorDto> sponsors = sponsorService.fetchSponsorsWithOffers();
+		return CollectionUtils.isEmpty(sponsors)
+				? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+						: new ResponseEntity<List<SponsorDto>>(sponsors, HttpStatus.OK);
+	}
 	
 
 }

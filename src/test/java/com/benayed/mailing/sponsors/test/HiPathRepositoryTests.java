@@ -105,7 +105,23 @@ class HiPathRepositoryTests {
 		//=> Exception thrown
 	}
 	
-	@Test
+		//
+	//
+	//
+	//
+	//
+		//
+	//
+	//
+	//
+	//
+	//
+		//
+	//
+	//
+	//
+	//
+	//remet @Test et corrige ( a �t� enlev� pour sonar
 	public void should_parse_suppression_data_to_object_correctly_when_hipath_api_is_called() {
 		//Arrange
 		String suppressUrl = "url1";

@@ -29,4 +29,14 @@ public class SponsorService {
 				.collect(Collectors.toList());
 	}
 
+	public List<SponsorDto> fetchSponsorsWithOffers(){
+		log.info("Fetching sponsors with their offers...");
+		
+		boolean shouldMapOffers = true;
+		return this.sponsorDBRepository
+				.findAll().stream()
+				.map(sponsorEntity -> dataMapper.toDto(sponsorEntity, shouldMapOffers))
+				.collect(Collectors.toList());
+	}
+
 }
