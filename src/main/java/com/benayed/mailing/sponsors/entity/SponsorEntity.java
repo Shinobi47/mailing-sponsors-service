@@ -7,8 +7,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.benayed.mailing.sponsors.enums.Platform;
@@ -24,6 +27,8 @@ import lombok.NoArgsConstructor;
 public class SponsorEntity {
 	
 	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "spr_id_generator")
+	@SequenceGenerator(name="spr_id_generator", sequenceName = "MAILING_SPONSORS_PK_SEQ", allocationSize = 1)
 	@Column(name = "SPR_ID")
 	private Long id;
 	

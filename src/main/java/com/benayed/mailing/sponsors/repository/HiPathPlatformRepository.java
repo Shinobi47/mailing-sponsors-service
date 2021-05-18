@@ -70,7 +70,7 @@ public class HiPathPlatformRepository {
 
 		ResponseEntity<String> response = this.hiPathRestTemplate.postForEntity(apiUrl, requestEntity, String.class);
 	
-		return unmarshallResponse(response, this::unMarshallSponsorSuppressionData).map(this::toDtoWithExtractedUrl);
+		return unmarshallResponse(response, this::unMarshallSponsorSuppressionData).map(this::toDtoWithFormattedSuppressionUrlField);
 
 	}
 
@@ -83,9 +83,9 @@ public class HiPathPlatformRepository {
 	    }
 	    else{
 	    	log.warn("The sponsor api responded with a non-XML response");
-	    	log.warn("Server response : {}", response.getBody().toString());
+	    	log.warn("Server response : {}", response.getBody());
 	    	
-	    	throw new TechnicalException("cannot retrieve data from response ! body received : " + response.getBody().toString());
+	    	throw new TechnicalException("Cannot fetch offers from sponsor API, error while parsing response data ! body received : " + response.getBody());
 	    }
 		
 	}
@@ -131,7 +131,7 @@ public class HiPathPlatformRepository {
 	}
 	
 
-	private SuppressionInfoDto toDtoWithExtractedUrl(SuppressionInfoDto suppData) {
+	private SuppressionInfoDto toDtoWithFormattedSuppressionUrlField(SuppressionInfoDto suppData) {
 		// url comes like this form hipath : " url,unknown,unknown
 		String extractedSuppDataUrl = suppData.getSuppressionDataUrl() == null ? null :
 			suppData.getSuppressionDataUrl().split(",")[0];

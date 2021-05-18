@@ -3,6 +3,8 @@ package com.benayed.mailing.sponsors.test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +82,13 @@ class OffersServiceTest {
 		//=> Exception thrown
 	}
 	
+	
+	
+	
+	
+	
+	
+	
 	@Test
 	public void should_throw_exception_when_no_offer_is_found() {
 		//Arrange
@@ -94,9 +103,9 @@ class OffersServiceTest {
 		//Assert
 		// => exception thrown
 	}
-	
+
 	@Test
-	public void should_throw_exception_when_offer_has_no_sponsor_is_found() {
+	public void should_throw_exception_when_offer_has_no_sponsor() {
 		//Arrange
 		Long someOfferId = 1L;
 		Optional<OfferEntity> entityWithNoSponsor = Optional.of(OfferEntity.builder().sponsor(null).build());
@@ -140,6 +149,7 @@ class OffersServiceTest {
 		
 		when(offerDBRepository.findById(someOfferId)).thenReturn(someOfferData);
 		when(hiPathPlatformRepository.fetchOfferSuppressionInfo(offerInTheDb.getCampaignid(), offerInTheDb.getSponsor().getApiKey(), offerInTheDb.getSponsor().getApiURL())).thenReturn(existingSuppression);
+		
 		//Act
 		SuppressionInfoDto suppressionData = offerService.fetchOfferSuppressionData(someOfferId);
 		
@@ -147,16 +157,21 @@ class OffersServiceTest {
 		Assertions.assertThat(suppressionData).isNotNull();
 	}
 	
+	
+	
+	
+	
+	
 	@Test
-	public void should_throw_exception_when_refreshing_sponsor_data_with_no_sponsor_available() {
+	public void should_throw_exception_when_refreshing_sponsor_data_while_no_sponsor_found() {
 		//Arrange
-		String someSponsorName = "someSponsorName";
+		Long someSponsorId = 7l;
 		Optional<SponsorEntity> emptySponsor = Optional.empty();
-		when(sponsorDBRepository.findByName(someSponsorName)).thenReturn(emptySponsor);
+		when(sponsorDBRepository.findById(someSponsorId)).thenReturn(emptySponsor);
 		
 		//Act
 		assertThrows(TechnicalException.class, () ->
-		offerService.refreshSponsorOffers(someSponsorName));
+		offerService.refreshSponsorOffers(someSponsorId));
 		
 		//Assert
 		//Exception thrown
@@ -165,35 +180,37 @@ class OffersServiceTest {
 	@Test
 	public void should_throw_exception_when_refreshing_sponsor_data_with_null_platform() {
 		//Arrange
-		String someSponsorName = "someSponsorName";
+		Long someSponsorId = 7l;
 		Optional<SponsorEntity> sponsorWithNullPlatform = Optional.of(SponsorEntity.builder().build());
-		when(sponsorDBRepository.findByName(someSponsorName)).thenReturn(sponsorWithNullPlatform);
+		when(sponsorDBRepository.findById(someSponsorId)).thenReturn(sponsorWithNullPlatform);
 		
 		//Act
 		assertThrows(TechnicalException.class, () ->
-		offerService.refreshSponsorOffers(someSponsorName));
+		offerService.refreshSponsorOffers(someSponsorId));
 		
 		//Assert
 		//Exception thrown
 	}
 	
 	@Test
-	public void should_throw_exception_when_refreshing_sponsor_data_with_null_platforma() {
+	public void should_fetch_offers_from_hiPath_Api_when_last_fetch_date_is_null() {
 		//Arrange
-		String someSponsorName = "someSponsorName";
+		LocalDateTime nullLastRefreshDate = null;
+		Long SomeSponsorId = 7l;
 		SponsorEntity sponsorInTheRepo = SponsorEntity.builder()
 				.platform(Platform.HiPath)
 				.apiKey("someApiKey")
 				.apiURL("someApiUrl")
-				.id(1L)
-				.name(someSponsorName)
+				.id(SomeSponsorId)
+				.name("someName")
+				.lastOffersRefresh(nullLastRefreshDate)
 				.build();
 		List<OfferDto> offerReturnedByHiPath = Arrays.asList(OfferDto.builder().build());
-		when(sponsorDBRepository.findByName(someSponsorName)).thenReturn(Optional.of(sponsorInTheRepo));
+		when(sponsorDBRepository.findById(SomeSponsorId)).thenReturn(Optional.of(sponsorInTheRepo));
 		when(hiPathPlatformRepository.fetchOffers(sponsorInTheRepo.getApiKey(), sponsorInTheRepo.getApiURL())).thenReturn(offerReturnedByHiPath);
 		
 		//Act
-		offerService.refreshSponsorOffers(someSponsorName);
+		offerService.refreshSponsorOffers(SomeSponsorId);
 		
 		//Assert
 		Mockito.verify(hiPathPlatformRepository, Mockito.times(1)).fetchOffers(sponsorInTheRepo.getApiKey(), sponsorInTheRepo.getApiURL());
@@ -202,5 +219,83 @@ class OffersServiceTest {
 		Assertions.assertThat(sponsorInTheRepo.getLastOffersRefresh()).isNotNull();
 		Mockito.verify(offerDBRepository, Mockito.times(1)).saveAll(Mockito.anyIterable());
 	}
-
+	
+	@Test
+	public void should_fetch_offers_from_hiPath_Api_when_last_fetch_was_before_30_mins_ago() {
+		//Arrange
+		LocalDateTime fortyMinutesBeforeNow = LocalDateTime.now().minus(Duration.ofMinutes(40));
+		Long SomeSponsorId = 7l;
+		SponsorEntity sponsorInTheRepo = SponsorEntity.builder()
+				.platform(Platform.HiPath)
+				.apiKey("someApiKey")
+				.apiURL("someApiUrl")
+				.id(SomeSponsorId)
+				.name("someName")
+				.lastOffersRefresh(fortyMinutesBeforeNow)
+				.build();
+		List<OfferDto> offerReturnedByHiPath = Arrays.asList(OfferDto.builder().build());
+		when(sponsorDBRepository.findById(SomeSponsorId)).thenReturn(Optional.of(sponsorInTheRepo));
+		when(hiPathPlatformRepository.fetchOffers(sponsorInTheRepo.getApiKey(), sponsorInTheRepo.getApiURL())).thenReturn(offerReturnedByHiPath);
+		
+		//Act
+		offerService.refreshSponsorOffers(SomeSponsorId);
+		
+		//Assert
+		Mockito.verify(hiPathPlatformRepository, Mockito.times(1)).fetchOffers(sponsorInTheRepo.getApiKey(), sponsorInTheRepo.getApiURL());
+		Mockito.verify(offerDBRepository, Mockito.times(1)).deleteBySponsor_id(sponsorInTheRepo.getId());
+		Mockito.verify(sponsorDBRepository, Mockito.times(1)).save(sponsorInTheRepo);
+		Assertions.assertThat(sponsorInTheRepo.getLastOffersRefresh()).isNotNull();
+		Mockito.verify(offerDBRepository, Mockito.times(1)).saveAll(Mockito.anyIterable());
+	}
+	
+	@Test
+	public void should_not_fetch_offers_from_hiPath_Api_when_a_fetch_was_in_the_last_30_mins() { //cuz hipath only accepts a call to offers endpoint once each 30 mins 
+		//Arrange
+		LocalDateTime fifteenMinutesBeforeNow = LocalDateTime.now().minus(Duration.ofMinutes(15));
+		Long SomeSponsorId = 7l;
+		SponsorEntity sponsorInTheRepo = SponsorEntity.builder()
+				.platform(Platform.HiPath)
+				.apiKey("someApiKey")
+				.apiURL("someApiUrl")
+				.id(SomeSponsorId)
+				.name("someName")
+				.lastOffersRefresh(fifteenMinutesBeforeNow)
+				.build();
+		when(sponsorDBRepository.findById(SomeSponsorId)).thenReturn(Optional.of(sponsorInTheRepo));
+		
+		//Act
+		offerService.refreshSponsorOffers(SomeSponsorId);
+		
+		//Assert
+		Mockito.verify(hiPathPlatformRepository, Mockito.never()).fetchOffers(sponsorInTheRepo.getApiKey(), sponsorInTheRepo.getApiURL());
+		Mockito.verify(offerDBRepository, Mockito.never()).deleteBySponsor_id(sponsorInTheRepo.getId());
+		Mockito.verify(sponsorDBRepository, Mockito.never()).save(sponsorInTheRepo);
+		Assertions.assertThat(sponsorInTheRepo.getLastOffersRefresh()).isEqualTo(fifteenMinutesBeforeNow);// did not change
+		Mockito.verify(offerDBRepository, Mockito.never()).saveAll(Mockito.anyIterable());
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	public void should_fetch_all_sponsor_data_and_map_offers_too(){
+		//Arrange
+		SponsorEntity sponsorWithAnOffer = SponsorEntity.builder()
+				.offers(Arrays.asList(OfferEntity.builder().id(1l).build())).build();
+		Mockito.when(sponsorDBRepository.findAll()).thenReturn(Arrays.asList(sponsorWithAnOffer));
+		
+		//Act
+		List<SponsorDto> sponsorWithOffers = this.offerService.getAllSponsorsData();
+		
+		//Assert
+		Mockito.verify(sponsorDBRepository, Mockito.times(1)).findAll();
+		Assertions.assertThat(sponsorWithOffers.get(0).getOffers()).isNotEmpty(); //offers are mapped
+		
+	}
+	
+	
 }

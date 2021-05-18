@@ -1,14 +1,17 @@
 package com.benayed.mailing.sponsors.controller;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,40 +48,20 @@ public class SponsorsController {
 		return "Hello world";
 	}
 
-	@Operation(summary = "Gets a sponsor and its available offers, if the refresh-offers parameter is true, the API fetches new offers from the distant provider api")
-	@ApiResponses(value = { 
-			  @ApiResponse(responseCode = "200", description = "Found the sponsor", 
-			    content = { @Content(mediaType = "application/json", 
-			      schema = @Schema(implementation = SponsorDto.class)) }),
-			  @ApiResponse(responseCode = "404", description = "Sponsor not found", 
-			    content = @Content) })
-	@GetMapping(path = "/sponsors/{name}/offers", produces = "application/json")
-	public ResponseEntity<?> fetchSponsorData(@PathVariable String name, @RequestParam(name = "refresh-offers", required = false) Boolean refreshOffers){
-
-		if(Boolean.TRUE.equals(refreshOffers)) {
-			offerService.refreshSponsorOffers(name);
-		}
-		
-		SponsorDto sponsor = offerService.fetchSponsorOffers(name);
-		return Objects.nonNull(sponsor) 
-				? new ResponseEntity<SponsorDto>(sponsor, HttpStatus.OK)
-						: new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	}	
-	
 	@Operation(summary = "activate or deactivate an offer", description = "The patch supported ATM is to activate or deactivate an offer by providing a json input containing the fields 'offerId' and 'isActive'")
 	@ApiResponses(value = { 
 			  @ApiResponse(responseCode = "200", description = "Offer patched successfully"),
 			  @ApiResponse(responseCode = "400", description = "Invalid request parameters", 
 			    content = @Content) })
 	@PatchMapping(path = "/offers/{id}")
-	public void patch(@RequestBody ActivateOfferDto offerPatch) {
+	public void patch(@PathVariable(name = "id")Long offerId, @RequestBody ActivateOfferDto offerPatch) {
 		
 		if(Boolean.TRUE.equals(offerPatch.getIsActive())) {
-			offerActivationService.activateOffer(offerPatch.getOfferId());
+			offerActivationService.activateOffer(offerId);
 		}
 		
 		else if(Boolean.FALSE.equals(offerPatch.getIsActive())) {
-			offerActivationService.deactivateOffer(offerPatch.getOfferId());
+			offerActivationService.deactivateOffer(offerId);
 		}
 	
 		throw new IllegalArgumentException("Unsupported patch operation");
@@ -104,7 +87,7 @@ public class SponsorsController {
 	
 	
 	@Operation(summary = "Get all available sponsors list with their offers")
-	@ApiResponses(value = { 
+	@ApiResponses(value = {
 			  @ApiResponse(responseCode = "200", description = "Found the sponsors", 
 			    content = { @Content(mediaType = "application/json", 
 			      schema = @Schema(implementation = SponsorDto.class)) }),
@@ -119,5 +102,48 @@ public class SponsorsController {
 						: new ResponseEntity<List<SponsorDto>>(sponsors, HttpStatus.OK);
 	}
 	
+	
+	@Operation(summary = "Add a sponsor only name, platform, apikey, apiUrl fields are to be posted")
+	@ApiResponses(value = {
+			  @ApiResponse(responseCode = "200", description = "Sponsor added succesfully", 
+			    content = { @Content(mediaType = "application/json", 
+			      schema = @Schema(implementation = SponsorDto.class)) })
+			  })
+	@PostMapping(path = "/sponsors", consumes = "application/json", produces = "application/json")
+	public ResponseEntity<SponsorDto> addSponsor(@RequestBody SponsorDto sponsor, @RequestParam(defaultValue = "false") boolean refreshSponsorOffers){
 
+		SponsorDto postedSponsor = this.sponsorService.postSponsor(sponsor, refreshSponsorOffers);
+		return new ResponseEntity<SponsorDto>(postedSponsor, HttpStatus.OK);
+	}
+	
+
+	@Operation(summary = "Delete a sponsor by its id")
+	@ApiResponses(value = {
+			  @ApiResponse(responseCode = "200", description = "Sponsor deleted succesfully")
+			  })
+	@DeleteMapping(path = "/sponsors/{id}")
+	public ResponseEntity<?> deleteSponsor(@PathVariable(name = "id") Long sponsorId){
+
+		this.sponsorService.deleteSponsor(sponsorId);
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+	
+	@Operation(summary = "activate or deactivate an offer", description = "The patch supported ATM is to activate or deactivate an offer by providing a json input containing the fields 'offerId' and 'isActive'")
+	@ApiResponses(value = { 
+			  @ApiResponse(responseCode = "200", description = "Offer patched successfully"),
+			  @ApiResponse(responseCode = "400", description = "Invalid request parameters", 
+			    content = @Content) })
+	@PatchMapping(path = "/sponsors/{id}")
+	public SponsorDto patch(@PathVariable(name = "id") Long sponsorId, @RequestBody HashMap<String, String> patch) {
+		
+		Optional.ofNullable(patch)
+			.map(p -> p.get("action"))
+			.filter("refresh"::equalsIgnoreCase)
+			.orElseThrow(() -> new IllegalArgumentException("Unsupported patch operation"));
+		
+		this.offerService.refreshSponsorOffers(sponsorId);
+		return this.sponsorService.fetchSponsorWithOffers(sponsorId);
+	
+	}
+	
 }

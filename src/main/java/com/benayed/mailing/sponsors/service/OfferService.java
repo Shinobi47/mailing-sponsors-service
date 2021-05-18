@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import com.benayed.mailing.sponsors.dto.SponsorDto;
@@ -34,7 +36,6 @@ public class OfferService {
 	private OfferDBRepository offerDBRepository;
 	private DataMapper dataMapper;
 
-	
 	public SuppressionInfoDto fetchOfferSuppressionData(Long offerId) {
 		OfferEntity offer = offerDBRepository.findById(offerId)
 				.orElseThrow(() -> new TechnicalException("No such offer with the given id"));
@@ -53,11 +54,12 @@ public class OfferService {
 		return sponsors.stream().map(sponsor -> dataMapper.toDto(sponsor, shouldMapOffers)).collect(Collectors.toList());
 	}
 	
-	public void refreshSponsorOffers(String sponsorName) throws TechnicalException {
+	@Transactional
+	public void refreshSponsorOffers(Long sponsorId) throws TechnicalException {
 		log.info("Refreshing Sponsor offers ...");
 		SponsorEntity sponsor = sponsorDBRepository
-				.findByName(sponsorName)
-				.orElseThrow(() -> new TechnicalException("No sponsor found with the sponsor name : " + sponsorName));
+				.findById(sponsorId)
+				.orElseThrow(() -> new TechnicalException("No sponsor found with the sponsor id : " + sponsorId));
 
 		if(Platform.HiPath.equals(sponsor.getPlatform())) {
 			refreshSponsorOffersInTheDBFromDistantApi(sponsor);
@@ -88,6 +90,7 @@ public class OfferService {
 					.peek(offer -> offer.setSponsor(SponsorEntity.builder().id(sponsor.getId()).build()))
 					.peek(offer -> offer.setIsActive(FALSE))
 					.collect(Collectors.toList());
+			
 			persistFreshOffers(sponsor, freshOffers);
 		}
 

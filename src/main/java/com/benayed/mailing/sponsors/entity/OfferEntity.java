@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 public class OfferEntity {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "book_generator")
-	@SequenceGenerator(name="book_generator", sequenceName = "MAILING_OFFERS_PK_SEQ", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "ofr_id_generator")
+	@SequenceGenerator(name="ofr_id_generator", sequenceName = "MAILING_OFFERS_PK_SEQ", allocationSize = 1)
 	@Column(name = "OFR_ID")
 	private Long id;
 	

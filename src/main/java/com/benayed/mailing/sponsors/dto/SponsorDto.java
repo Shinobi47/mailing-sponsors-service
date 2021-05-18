@@ -20,6 +20,10 @@ public class SponsorDto {
 	private Platform platform;
 	
 	private LocalDateTime lastOffersRefresh;
+	
+	private String apiURL;
+	
+	private String apiKey;
 
 	private List<OfferDto> offers;
 

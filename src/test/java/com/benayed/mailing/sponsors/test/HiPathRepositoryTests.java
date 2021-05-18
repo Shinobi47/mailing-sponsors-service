@@ -3,6 +3,9 @@ package com.benayed.mailing.sponsors.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -13,14 +16,24 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.benayed.mailing.sponsors.dto.OfferDto;
 import com.benayed.mailing.sponsors.dto.SuppressionInfoDto;
+import com.benayed.mailing.sponsors.exception.TechnicalException;
 import com.benayed.mailing.sponsors.repository.HiPathPlatformRepository;
 
 
@@ -32,11 +45,16 @@ class HiPathRepositoryTests {
 	
 	private HiPathPlatformRepository hiPathPlatformRepository;
 	
+	@Captor
+	private ArgumentCaptor<HttpEntity<MultiValueMap<String, String>>> hiPathRequestCaptor;
+	
 	@BeforeEach
 	public void init() {
 		hiPathPlatformRepository = new HiPathPlatformRepository(restTemplate);
 	}
 	
+	
+	/////////////////////////////////////  Testing fetchOffers
 	@Test
 	public void should_parse_offer_correctly_to_object_when_hipath_api_is_called(){
 		
@@ -76,7 +94,33 @@ class HiPathRepositoryTests {
 		assertThat(responseOffer.getGeoTargeting()).isEqualTo(geoTargeting);
 		
 	}
-	
+	@Test
+	public void should() {
+		//Arrange
+		String apiKey = "someApiKey";
+		String apiUrl = "someApiUrl";
+		String apiFuncToCall = "getcampaigns";
+
+		String response = buildXmlSuppressionData("someSuppressMsg", "someSuppressUrl");
+		when(restTemplate.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+		
+		//Act
+		hiPathPlatformRepository.fetchOffers(apiKey, apiUrl);
+		
+		//Assert
+		verify(restTemplate, times(1)).postForEntity(eq(apiUrl), hiPathRequestCaptor.capture(), eq(String.class));
+		HttpEntity<MultiValueMap<String, String>> request = hiPathRequestCaptor.getValue();
+		
+		MultiValueMap<String, String> body = request.getBody();
+		assertThat(body).hasSize(2);
+		assertThat(body.get("apikey").get(0)).isEqualTo(apiKey);
+		assertThat(body.get("apifunc").get(0)).isEqualTo(apiFuncToCall);
+		
+		HttpHeaders headers = request.getHeaders();
+		assertThat(headers).hasSize(1);
+		assertThat(headers.getContentType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED);
+	}
+
 	@Test
 	public void should_throw_exception_when_calling_hipathApi_with_null_apiKey() {
 		//Arrange
@@ -105,27 +149,13 @@ class HiPathRepositoryTests {
 		//=> Exception thrown
 	}
 	
-		//
-	//
-	//
-	//
-	//
-		//
-	//
-	//
-	//
-	//
-	//
-		//
-	//
-	//
-	//
-	//
-	//remet @Test et corrige ( a �t� enlev� pour sonar
+	
+	
+	///////////////////////////////////////   Testing fetchOfferSuppressionInfo
+	@Test
 	public void should_parse_suppression_data_to_object_correctly_when_hipath_api_is_called() {
 		//Arrange
 		String suppressUrl = "url1";
-		String suppressUrlSuffix  = ",,";
 		String suppressMsg = "msg1";
 
 		String response = buildXmlSuppressionData(suppressMsg, suppressUrl);
@@ -133,11 +163,11 @@ class HiPathRepositoryTests {
 
 		
 		//Act
-		Optional<SuppressionInfoDto> suppressionData = hiPathPlatformRepository.fetchOfferSuppressionInfo("id1", "someKey", "someUrl");
+		Optional<SuppressionInfoDto> suppressionData = hiPathPlatformRepository.fetchOfferSuppressionInfo("campaignId1", "someKey", "someUrl");
 		
 		//Assert
 		assertThat(suppressionData).isPresent();
-		assertThat(suppressionData.get().getSuppressionDataUrl()).isEqualTo(suppressUrl + suppressUrlSuffix);
+		assertThat(suppressionData.get().getSuppressionDataUrl()).isEqualTo(suppressUrl);
 		assertThat(suppressionData.get().getSuppressionErrorMessage()).isEqualTo(suppressMsg);
 	}
 	
@@ -188,7 +218,64 @@ class HiPathRepositoryTests {
 		//=> exception thrown
 	}
 	
+	
+	@Test
+	public void should_call_hiPath_api_with_right_body_and_headers_when_fetching_suppression_offer() {
+		//Arrange
+		String apiUrl = "someUrl";
+		String apiKey = "someKey";
+		String campaignId = "someId";
+		String apiFuncToCall = "getsuppression";
 
+		String response = buildXmlSuppressionData("someSuppressMsg", "someSuppressUrl");
+		when(restTemplate.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+
+		
+		//Act
+		hiPathPlatformRepository.fetchOfferSuppressionInfo(campaignId, apiKey, apiUrl);
+		
+		//Assert
+		verify(restTemplate, times(1)).postForEntity(eq(apiUrl), hiPathRequestCaptor.capture(), eq(String.class));
+		HttpEntity<MultiValueMap<String, String>> request = hiPathRequestCaptor.getValue();
+		
+		MultiValueMap<String, String> body = request.getBody();
+		assertThat(body).hasSize(3);
+		assertThat(body.get("apikey").get(0)).isEqualTo(apiKey);
+		assertThat(body.get("apifunc").get(0)).isEqualTo(apiFuncToCall);
+		assertThat(body.get("campaignid").get(0)).isEqualTo(campaignId);
+		
+		HttpHeaders headers = request.getHeaders();
+		assertThat(headers).hasSize(1);
+		assertThat(headers.getContentType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED);
+	}
+	
+	
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = "not an xml")
+	public void should_throw_exception_if_hiPath_response_is_not_XML_when_fetching_suppression_offer(String responseThatIsNotXml) {
+		//Arrange
+		String apiUrl = "someUrl";
+		String apiKey = "someKey";
+		String campaignId = "someId";
+
+		when(restTemplate.postForEntity(anyString(), any(), any())).thenReturn(new ResponseEntity<>(responseThatIsNotXml, HttpStatus.OK));
+
+		
+		//Act
+		Assertions.assertThrows(TechnicalException.class, () -> 
+		hiPathPlatformRepository.fetchOfferSuppressionInfo(campaignId, apiKey, apiUrl));
+		
+		//Assert
+		//Exception raised
+
+	}
+	
+
+	
+	
+	
+	
 	private String buildXmlSuppressionData(String suppressMsg, String suppressUrl) {
 		return "<?xml version='1.0' encoding='UTF-8'?>" + 
 				"<dataset apifunc='getsuppression' campaignid='3885'>" + 

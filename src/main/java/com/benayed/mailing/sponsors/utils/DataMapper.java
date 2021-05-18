@@ -35,6 +35,16 @@ public class DataMapper {
 		}
 		return dto;
 	}
+	
+	public SponsorEntity toEntity(SponsorDto dto) {
+		return SponsorEntity.builder()
+				.id(dto.getId())
+				.name(dto.getName())
+				.platform(dto.getPlatform())
+				.lastOffersRefresh(dto.getLastOffersRefresh())
+				.apiKey(dto.getApiKey())
+				.apiURL(dto.getApiURL()).build();
+	}
 
 	public OfferDto toDto(OfferEntity entity) {
 		return OfferDto.builder()
@@ -52,16 +62,6 @@ public class DataMapper {
 				.geoTargeting(entity.getGeoTargeting())
 				.isActive(StringToBoolean(entity.getIsActive())).build();
 
-	}
-
-	public Boolean StringToBoolean(String isActive) {
-		if(TRUE.equals(isActive)) {
-			return true;
-		}
-		else if(FALSE.equals(isActive)) {
-			return false;
-		}
-		return null;
 	}
 	
 	public OfferEntity toEntity(OfferDto dto) {
@@ -81,6 +81,16 @@ public class DataMapper {
 				.isActive(booleanToString(dto.getIsActive())).build();
 	}
 
+	public Boolean StringToBoolean(String isActive) {
+		if(TRUE.equals(isActive)) {
+			return true;
+		}
+		else if(FALSE.equals(isActive)) {
+			return false;
+		}
+		return null;
+	}
+	
 	public String booleanToString(Boolean isActive) {
 		if(Boolean.TRUE.equals(isActive)) {
 			return TRUE;
